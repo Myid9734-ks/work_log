@@ -1,0 +1,12 @@
+{
+  "name": "work-log-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions for Work Log MySQL integration",
+  "main": "worklogs.js",
+  "dependencies": {
+    "mysql2": "^3.6.5"
+  },
+  "keywords": ["netlify-functions", "mysql", "work-log"],
+  "author": "Your Name",
+  "license": "MIT"
+}

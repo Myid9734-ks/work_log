@@ -1,0 +1,13 @@
+{
+  "name": "work-log",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Work Log site with Netlify Functions (MySQL)",
+  "scripts": {
+    "build": "echo no-build",
+    "postinstall": "echo installing root deps for functions"
+  },
+  "dependencies": {
+    "mysql2": "^3.6.5"
+  }
+}

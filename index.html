@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>업무 관리 시스템</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 업무 관리 시스템</h1>
+            <p class="header-subtitle">효율적인 업무 관리를 위한 직관적인 도구</p>
+        </header>
+
+        <main>
+            <!-- 업무 입력 폼 -->
+            <section class="task-form">
+                <h2>✨ 새 업무 등록</h2>
+                <form id="taskForm">
+                    <div class="form-group">
+                        <label for="projectContent">
+                            <span class="label-icon">📝</span>
+                            프로젝트 내용
+                        </label>
+                        <input type="text" id="projectContent" name="projectContent" 
+                               placeholder="업무 내용을 입력하세요" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="status">
+                                <span class="label-icon">📊</span>상태
+                            </label>
+                            <select name="status" id="status" required>
+                                <option value="">상태를 선택하세요</option>
+                                <option value="예정">📅 예정</option>
+                                <option value="진행중">🔄 진행중</option>
+                                <option value="종료">✅ 종료</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="startDate">
+                                <span class="label-icon">📅</span>시작날짜
+                            </label>
+                            <input type="date" name="startDate" id="startDate" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="memo">
+                            <span class="label-icon">💭</span>
+                            메모
+                        </label>
+                        <textarea id="memo" name="memo" rows="3" 
+                                  placeholder="추가적인 업무 정보나 메모를 입력하세요"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary">
+                        <span class="btn-icon">➕</span>
+                        업무 등록
+                    </button>
+                </form>
+            </section>
+
+            <!-- 조회 옵션과 업무 목록 -->
+            <section>
+                <h2>📊 조회 옵션 & 업무 목록</h2>
+                
+                <!-- 조회 뷰 선택 -->
+                <div class="view-options">
+                    <div class="view-buttons">
+                        <button id="dailyView" class="btn-view active">
+                            <span class="btn-icon">📅</span>일간
+                        </button>
+                        <button id="weeklyView" class="btn-view">
+                            <span class="btn-icon">📊</span>주간
+                        </button>
+                        <button id="monthlyView" class="btn-view">
+                            <span class="btn-icon">📈</span>월간
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 날짜 네비게이션 -->
+                <div class="date-navigation">
+                    <button id="prevPeriod" class="btn-nav" title="이전 기간">◀</button>
+                    <div class="period-selector">
+                        <span id="currentPeriod" class="clickable-period" title="클릭하여 날짜 변경">2025년 8월 15일</span>
+                        <input type="date" id="manualDateInput" class="manual-date-input" style="display: none;">
+                    </div>
+                    <button id="nextPeriod" class="btn-nav" title="다음 기간">▶</button>
+                </div>
+
+                <!-- 통계 요약 -->
+                <div class="list-header">
+                    <div class="list-stats">
+                        <div class="stat-item">
+                            <span class="stat-icon">📋</span>
+                            <span>총 업무: <span id="totalTasks">0</span></span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-icon">📅</span>
+                            <span>예정: <span id="plannedTasks">0</span></span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-icon">🔄</span>
+                            <span>진행중: <span id="inProgressTasks">0</span></span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-icon">✅</span>
+                            <span>완료: <span id="completedTasks">0</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 업무 목록 -->
+                <div id="taskContainer">
+                    <!-- 업무 항목들이 여기에 동적으로 생성됩니다 -->
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2024 업무 관리 시스템. 효율적인 업무 관리를 위한 도구입니다.</p>
+        </footer>
+    </div>
+
+    <script src="api.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+[build]
+  functions = "netlify/functions"
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  external_node_modules = ["mysql2"]
+
+[[redirects]]
+  from = "/api"
+  to = "/.netlify/functions/worklogs"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/worklogs/:splat"
+  status = 200
+  force = true
