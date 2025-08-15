@@ -1,6 +1,7 @@
 const express = require('express');
-const mysql = require('mysql2/promise');
+const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,68 +36,79 @@ app.use((req, res, next) => {
 // 미들웨어
 app.use(express.json());
 
-// MySQL 연결 설정
-const dbConfig = {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: 'work_log'
-};
-
-// MySQL 연결 풀 생성
-let pool;
-
-async function getConnection() {
-    if (!pool) {
-        pool = mysql.createPool(dbConfig);
-    }
-    return pool;
-}
+// SQLite 데이터베이스 설정
+const dbPath = path.join(__dirname, 'work_logs.db');
+let db;
 
 // 데이터베이스와 테이블 자동 생성
 async function setupDatabase() {
-    try {
-        const connection = await getConnection();
-        
-        // 테이블이 없으면 생성
-        await connection.execute(`
-            CREATE TABLE IF NOT EXISTS work_logs (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                date DATE NOT NULL COMMENT '작업 날짜',
-                start_time TIME NOT NULL COMMENT '시작 시간',
-                end_time TIME NOT NULL COMMENT '종료 시간',
-                work_type VARCHAR(50) NOT NULL COMMENT '작업 유형',
-                description TEXT COMMENT '작업 설명',
-                mood VARCHAR(20) COMMENT '기분',
-                weather VARCHAR(20) COMMENT '날씨',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '생성 시간',
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 시간',
+    return new Promise((resolve, reject) => {
+        db = new sqlite3.Database(dbPath, (err) => {
+            if (err) {
+                console.error('❌ SQLite 데이터베이스 연결 실패:', err);
+                reject(err);
+                return;
+            }
+            console.log('✅ SQLite 데이터베이스 연결 성공');
+            
+            // 테이블 생성
+            db.run(`
+                CREATE TABLE IF NOT EXISTS work_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    date TEXT NOT NULL,
+                    start_time TEXT NOT NULL,
+                    end_time TEXT NOT NULL,
+                    work_type TEXT NOT NULL,
+                    description TEXT,
+                    mood TEXT,
+                    weather TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            `, (err) => {
+                if (err) {
+                    console.error('❌ 테이블 생성 실패:', err);
+                    reject(err);
+                    return;
+                }
+                console.log('✅ 테이블 생성 완료');
                 
-                INDEX idx_date (date),
-                INDEX idx_work_type (work_type),
-                INDEX idx_created_at (created_at)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='작업 로그 테이블'
-        `);
-        
-        // 샘플 데이터 확인 및 삽입
-        const [rows] = await connection.execute('SELECT COUNT(*) as count FROM work_logs');
-        if (rows[0].count === 0) {
-            await connection.execute(`
-                INSERT INTO work_logs (date, start_time, end_time, work_type, description, mood, weather) VALUES
-                ('2024-01-15', '09:00:00', '12:00:00', '개발', '프론트엔드 작업 로그 시스템 개발', '좋음', '맑음'),
-                ('2024-01-15', '13:00:00', '17:00:00', '회의', '프로젝트 기획 회의', '보통', '흐림'),
-                ('2024-01-16', '09:30:00', '11:30:00', '디자인', 'UI/UX 디자인 검토', '좋음', '맑음')
-            `);
-            console.log('✅ 샘플 데이터 삽입 완료');
-        }
-        
-        console.log('✅ 데이터베이스 설정 완료');
-        return true;
-    } catch (error) {
-        console.error('❌ 데이터베이스 설정 실패:', error);
-        return false;
-    }
+                // 샘플 데이터 확인 및 삽입
+                db.get('SELECT COUNT(*) as count FROM work_logs', (err, row) => {
+                    if (err) {
+                        console.error('❌ 데이터 카운트 조회 실패:', err);
+                        reject(err);
+                        return;
+                    }
+                    
+                    if (row.count === 0) {
+                        // 샘플 데이터 삽입
+                        const sampleData = [
+                            ['2024-01-15', '09:00:00', '12:00:00', '개발', '프론트엔드 작업 로그 시스템 개발', '좋음', '맑음'],
+                            ['2024-01-15', '13:00:00', '17:00:00', '회의', '프로젝트 기획 회의', '보통', '흐림'],
+                            ['2024-01-16', '09:30:00', '11:30:00', '디자인', 'UI/UX 디자인 검토', '좋음', '맑음']
+                        ];
+                        
+                        const stmt = db.prepare('INSERT INTO work_logs (date, start_time, end_time, work_type, description, mood, weather) VALUES (?, ?, ?, ?, ?, ?, ?)');
+                        
+                        sampleData.forEach(data => {
+                            stmt.run(data, (err) => {
+                                if (err) console.error('샘플 데이터 삽입 실패:', err);
+                            });
+                        });
+                        
+                        stmt.finalize(() => {
+                            console.log('✅ 샘플 데이터 삽입 완료');
+                            resolve(true);
+                        });
+                    } else {
+                        console.log('✅ 기존 데이터 확인됨');
+                        resolve(true);
+                    }
+                });
+            });
+        });
+    });
 }
 
 // API 엔드포인트
@@ -104,9 +116,14 @@ async function setupDatabase() {
 // 1. 모든 작업 로그 조회
 app.get('/api', async (req, res) => {
     try {
-        const connection = await getConnection();
-        const [rows] = await connection.execute('SELECT * FROM work_logs ORDER BY created_at DESC');
-        res.json(rows);
+        db.all('SELECT * FROM work_logs ORDER BY created_at DESC', (err, rows) => {
+            if (err) {
+                console.error('작업 로그 조회 오류:', err);
+                res.status(500).json({ error: '작업 로그 조회 실패' });
+                return;
+            }
+            res.json(rows);
+        });
     } catch (error) {
         console.error('작업 로그 조회 오류:', error);
         res.status(500).json({ error: '작업 로그 조회 실패' });
@@ -118,16 +135,22 @@ app.post('/api', async (req, res) => {
     try {
         const { date, startTime, endTime, workType, description, mood, weather } = req.body;
         
-        const connection = await getConnection();
-        const [result] = await connection.execute(
+        db.run(
             'INSERT INTO work_logs (date, start_time, end_time, work_type, description, mood, weather) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [date, startTime, endTime, workType, description, mood, weather]
+            [date, startTime, endTime, workType, description, mood, weather],
+            function(err) {
+                if (err) {
+                    console.error('작업 로그 저장 오류:', err);
+                    res.status(500).json({ error: '작업 로그 저장 실패' });
+                    return;
+                }
+                
+                res.status(201).json({ 
+                    id: this.lastID, 
+                    message: '작업 로그가 성공적으로 저장되었습니다.' 
+                });
+            }
         );
-        
-        res.status(201).json({ 
-            id: result.insertId, 
-            message: '작업 로그가 성공적으로 저장되었습니다.' 
-        });
     } catch (error) {
         console.error('작업 로그 저장 오류:', error);
         res.status(500).json({ error: '작업 로그 저장 실패' });
@@ -140,13 +163,24 @@ app.put('/api', async (req, res) => {
         const { id } = req.query;
         const { date, startTime, endTime, workType, description, mood, weather } = req.body;
         
-        const connection = await getConnection();
-        await connection.execute(
-            'UPDATE work_logs SET date = ?, start_time = ?, end_time = ?, work_type = ?, description = ?, mood = ?, weather = ?, updated_at = NOW() WHERE id = ?',
-            [date, startTime, endTime, workType, description, mood, weather, id]
+        db.run(
+            'UPDATE work_logs SET date = ?, start_time = ?, end_time = ?, work_type = ?, description = ?, mood = ?, weather = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [date, startTime, endTime, workType, description, mood, weather, id],
+            function(err) {
+                if (err) {
+                    console.error('작업 로그 수정 오류:', err);
+                    res.status(500).json({ error: '작업 로그 수정 실패' });
+                    return;
+                }
+                
+                if (this.changes === 0) {
+                    res.status(404).json({ error: '해당 작업 로그를 찾을 수 없습니다.' });
+                    return;
+                }
+                
+                res.json({ message: '작업 로그가 성공적으로 수정되었습니다.' });
+            }
         );
-        
-        res.json({ message: '작업 로그가 성공적으로 수정되었습니다.' });
     } catch (error) {
         console.error('작업 로그 수정 오류:', error);
         res.status(500).json({ error: '작업 로그 수정 실패' });
@@ -158,10 +192,20 @@ app.delete('/api', async (req, res) => {
     try {
         const { id } = req.query;
         
-        const connection = await getConnection();
-        await connection.execute('DELETE FROM work_logs WHERE id = ?', [id]);
-        
-        res.json({ message: '작업 로그가 성공적으로 삭제되었습니다.' });
+        db.run('DELETE FROM work_logs WHERE id = ?', [id], function(err) {
+            if (err) {
+                console.error('작업 로그 삭제 오류:', err);
+                res.status(500).json({ error: '작업 로그 삭제 실패' });
+                return;
+            }
+            
+            if (this.changes === 0) {
+                res.status(404).json({ error: '해당 작업 로그를 찾을 수 없습니다.' });
+                return;
+            }
+            
+            res.json({ message: '작업 로그가 성공적으로 삭제되었습니다.' });
+        });
     } catch (error) {
         console.error('작업 로그 삭제 오류:', error);
         res.status(500).json({ error: '작업 로그 삭제 실패' });
@@ -174,5 +218,10 @@ app.listen(PORT, async () => {
     console.log(`📊 API 엔드포인트: http://localhost:${PORT}/api`);
     
     // 데이터베이스 설정
-    await setupDatabase();
+    try {
+        await setupDatabase();
+        console.log('✅ 서버 초기화 완료');
+    } catch (error) {
+        console.error('❌ 서버 초기화 실패:', error);
+    }
 });
