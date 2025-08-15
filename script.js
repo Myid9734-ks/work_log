@@ -166,7 +166,7 @@ class TaskManager {
             projectContent: formData.get('projectContent'),
             status: formData.get('status'),
             startDate: formData.get('startDate'),
-            endDate: formData.get('endDate') || null,
+            endDate: (formData.get('status') === '예정' || formData.get('status') === '진행중') ? null : (formData.get('endDate') || null),
             memo: formData.get('memo'),
             createdAt: this.editingTaskId ? this.getTaskById(this.editingTaskId).createdAt : new Date().toISOString(),
             updatedAt: new Date().toISOString()
