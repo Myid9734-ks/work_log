@@ -85,13 +85,19 @@ class WorkLogAPI {
 
     // 데이터 형식 변환 (프론트엔드 → API)
     formatForAPI(task) {
+        // projectContent와 memo를 구분하여 저장
+        const description = task.projectContent || '';
+        const memo = task.memo || '';
+        
+        // memo가 있으면 description에 구분자와 함께 저장
+        const combinedDescription = memo ? `${description}|||${memo}` : description;
+        
         return {
             date: task.startDate,
             startTime: task.startTime || '09:00:00',
             endTime: task.endTime || '18:00:00',
             workType: task.status,
-            description: task.projectContent,
-            memo: task.memo || '',  // 메모를 별도 필드로 저장
+            description: combinedDescription,  // 구분자로 구분된 문자열
             mood: task.mood || '보통',
             weather: task.weather || '맑음'
         };
@@ -99,15 +105,29 @@ class WorkLogAPI {
 
     // 데이터 형식 변환 (API → 프론트엔드)
     formatFromAPI(workLog) {
+        // description에서 projectContent와 memo를 분리
+        let projectContent = '';
+        let memo = '';
+        
+        if (workLog.description && workLog.description.includes('|||')) {
+            const parts = workLog.description.split('|||');
+            projectContent = parts[0] || '';
+            memo = parts[1] || '';
+        } else {
+            // 기존 데이터는 description을 projectContent로 사용
+            projectContent = workLog.description || '';
+            memo = '';
+        }
+        
         return {
             id: workLog.id,
-            projectContent: workLog.description,
+            projectContent: projectContent,
             status: workLog.work_type,
             startDate: workLog.date,
             endDate: workLog.date,
             startTime: workLog.start_time,
             endTime: workLog.end_time,
-            memo: workLog.memo || workLog.description || '',  // memo 필드가 있으면 사용, 없으면 description 사용
+            memo: memo,
             mood: workLog.mood,
             weather: workLog.weather,
             createdAt: workLog.created_at,
