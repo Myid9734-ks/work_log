@@ -91,6 +91,7 @@ class WorkLogAPI {
             endTime: task.endTime || '18:00:00',
             workType: task.status,
             description: task.projectContent,
+            memo: task.memo || '',  // 메모를 별도 필드로 저장
             mood: task.mood || '보통',
             weather: task.weather || '맑음'
         };
@@ -106,7 +107,7 @@ class WorkLogAPI {
             endDate: workLog.date,
             startTime: workLog.start_time,
             endTime: workLog.end_time,
-            memo: workLog.description,
+            memo: workLog.memo || workLog.description || '',  // memo 필드가 있으면 사용, 없으면 description 사용
             mood: workLog.mood,
             weather: workLog.weather,
             createdAt: workLog.created_at,
