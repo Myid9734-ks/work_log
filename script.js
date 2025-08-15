@@ -215,14 +215,25 @@ class TaskManager {
     async deleteTask(taskId) {
         if (confirm('정말로 이 업무를 삭제하시겠습니까?')) {
             try {
-                await workLogAPI.deleteWorkLog(taskId);
-                
+                // 먼저 로컬에서 제거하여 즉시 화면 업데이트
                 this.tasks = this.tasks.filter(task => task.id !== taskId);
                 this.renderTasks();
+                
+                // API 호출
+                await workLogAPI.deleteWorkLog(taskId);
+                
                 this.showNotification('업무가 삭제되었습니다.', 'info');
+                
+                // 통계도 업데이트
+                this.updateStats();
+                
             } catch (error) {
                 console.error('업무 삭제 실패:', error);
                 this.showNotification('업무 삭제에 실패했습니다.', 'error');
+                
+                // 실패 시 원래 데이터 복원
+                await this.loadTasksFromAPI();
+                this.renderTasks();
             }
         }
     }
@@ -414,10 +425,19 @@ class TaskManager {
             return;
         }
 
-        container.innerHTML = filteredTasks.map(task => this.createTaskHTML(task)).join('');
+        // 기존 내용을 완전히 지우고 새로 생성
+        container.innerHTML = '';
+        filteredTasks.forEach(task => {
+            const taskElement = document.createElement('div');
+            taskElement.innerHTML = this.createTaskHTML(task);
+            container.appendChild(taskElement.firstElementChild);
+        });
         
         // 이벤트 리스너 추가
         this.addTaskEventListeners();
+        
+        // 강제 리플로우를 위한 트릭
+        container.offsetHeight;
     }
 
     updateStats() {
@@ -429,10 +449,19 @@ class TaskManager {
         const inProgressTasks = currentPeriodTasks.filter(task => task.status === '진행중').length;
         const completedTasks = currentPeriodTasks.filter(task => task.status === '종료').length;
         
-        document.getElementById('totalTasks').textContent = totalTasks;
-        document.getElementById('plannedTasks').textContent = plannedTasks;
-        document.getElementById('inProgressTasks').textContent = inProgressTasks;
-        document.getElementById('completedTasks').textContent = completedTasks;
+        // DOM 요소가 존재하는지 확인 후 업데이트
+        const totalElement = document.getElementById('totalTasks');
+        const plannedElement = document.getElementById('plannedTasks');
+        const inProgressElement = document.getElementById('inProgressTasks');
+        const completedElement = document.getElementById('completedTasks');
+        
+        if (totalElement) totalElement.textContent = totalTasks;
+        if (plannedElement) plannedElement.textContent = plannedTasks;
+        if (inProgressElement) inProgressElement.textContent = inProgressTasks;
+        if (completedElement) completedElement.textContent = completedTasks;
+        
+        // 강제 리플로우
+        if (totalElement) totalElement.offsetHeight;
     }
 
     // 현재 선택된 기간에 해당하는 업무만 반환 (필터 적용 전)
