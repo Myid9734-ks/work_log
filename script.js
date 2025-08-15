@@ -163,8 +163,10 @@ class TaskManager {
 
     // 완료 처리 함수 추가
     async completeTask(taskId) {
+        console.log('completeTask 호출됨:', taskId);
         const task = this.getTaskById(taskId);
         if (task) {
+            console.log('업무 완료 처리 중:', task);
             const updatedTask = {
                 ...task,
                 status: '종료',
@@ -172,10 +174,13 @@ class TaskManager {
                 updatedAt: new Date().toISOString()
             };
             
+            console.log('업데이트된 업무:', updatedTask);
             await this.updateTask(updatedTask);
             this.editingTaskId = null; // 편집 모드 해제
             this.renderTasks(); // 화면 업데이트 추가
             this.showNotification('업무가 완료 처리되었습니다!', 'success');
+        } else {
+            console.error('완료할 업무를 찾을 수 없습니다:', taskId);
         }
     }
 
@@ -248,27 +253,40 @@ class TaskManager {
     }
 
     editTask(taskId) {
+        console.log('editTask 호출됨:', taskId);
         const task = this.getTaskById(taskId);
         if (task) {
             this.editingTaskId = taskId;
             
             // 폼 필드 업데이트
             const form = document.getElementById('taskForm');
-            form.querySelector('[name="projectContent"]').value = task.projectContent;
-            form.querySelector('[name="status"]').value = task.status;
-            form.querySelector('[name="startDate"]').value = task.startDate;
-            form.querySelector('[name="endDate"]').value = task.endDate || '';
-            form.querySelector('[name="memo"]').value = task.memo || '';
+            const projectContentInput = form.querySelector('[name="projectContent"]');
+            const statusInput = form.querySelector('[name="status"]');
+            const startDateInput = form.querySelector('[name="startDate"]');
+            const endDateInput = form.querySelector('[name="endDate"]');
+            const memoInput = form.querySelector('[name="memo"]');
+            
+            if (projectContentInput) projectContentInput.value = task.projectContent;
+            if (statusInput) statusInput.value = task.status;
+            if (startDateInput) startDateInput.value = task.startDate;
+            if (endDateInput) endDateInput.value = task.endDate || '';
+            if (memoInput) memoInput.value = task.memo || '';
             
             // 버튼 텍스트 변경
-            form.querySelector('.btn-primary').textContent = '업무 수정';
+            const submitButton = form.querySelector('.btn-primary');
+            if (submitButton) submitButton.textContent = '업무 수정';
             
             // 폼을 보이게 하고 업무 목록을 숨김
-            document.getElementById('taskForm').style.display = 'block';
-            document.getElementById('taskContainer').style.display = 'none';
+            const taskContainer = document.getElementById('taskContainer');
+            if (form) form.style.display = 'block';
+            if (taskContainer) taskContainer.style.display = 'none';
             
             // 폼으로 스크롤
             form.scrollIntoView({ behavior: 'smooth' });
+            
+            console.log('편집 모드 활성화 완료');
+        } else {
+            console.error('업무를 찾을 수 없습니다:', taskId);
         }
     }
 
@@ -306,23 +324,34 @@ class TaskManager {
     }
 
     cancelInlineEdit() {
+        console.log('cancelInlineEdit 호출됨');
         this.editingTaskId = null;
         this.renderTasks();
         
-        // 폼을 숨기고 업무 목록을 표시
-        document.getElementById('taskForm').style.display = 'block';
-        document.getElementById('taskContainer').style.display = 'block';
+        // 폼을 보이게 하고 업무 목록을 표시
+        const form = document.getElementById('taskForm');
+        const taskContainer = document.getElementById('taskContainer');
+        if (form) form.style.display = 'block';
+        if (taskContainer) taskContainer.style.display = 'block';
+        
+        console.log('편집 모드 취소 완료');
     }
 
     resetForm() {
+        console.log('resetForm 호출됨');
         document.getElementById('taskForm').reset();
         this.editingTaskId = null;
-        document.querySelector('.btn-primary').textContent = '업무 등록';
+        const submitButton = document.querySelector('.btn-primary');
+        if (submitButton) submitButton.textContent = '업무 등록';
         this.setDefaultDates();
         
-        // 폼을 숨기고 업무 목록을 표시
-        document.getElementById('taskForm').style.display = 'block';
-        document.getElementById('taskContainer').style.display = 'block';
+        // 폼을 보이게 하고 업무 목록을 표시
+        const form = document.getElementById('taskForm');
+        const taskContainer = document.getElementById('taskContainer');
+        if (form) form.style.display = 'block';
+        if (taskContainer) taskContainer.style.display = 'block';
+        
+        console.log('폼 초기화 완료');
     }
 
     changeView(view) {
@@ -447,6 +476,8 @@ class TaskManager {
         const container = document.getElementById('taskContainer');
         const filteredTasks = this.getFilteredTasks();
         
+        console.log('renderTasks 호출됨, 필터된 업무 수:', filteredTasks.length);
+        
         // 통계 업데이트
         this.updateStats();
         
@@ -468,8 +499,12 @@ class TaskManager {
             container.appendChild(taskElement.firstElementChild);
         });
         
+        console.log('업무 HTML 생성 완료, 이벤트 리스너 추가 시작...');
+        
         // 이벤트 리스너 추가
         this.addTaskEventListeners();
+        
+        console.log('이벤트 리스너 추가 완료');
         
         // 강제 리플로우를 위한 트릭
         container.offsetHeight;
@@ -591,18 +626,23 @@ class TaskManager {
                 </div>
                 
                 <div class="task-actions">
-                    ${task.status !== '종료' ? `<button class="btn-complete" onclick="taskManager.completeTask('${task.id}')">✅ 완료</button>` : ''}
-                    <button class="btn-save" onclick="taskManager.saveInlineEdit('${task.id}')">💾 저장</button>
-                    <button class="btn-cancel" onclick="taskManager.cancelInlineEdit()">❌ 취소</button>
+                    ${task.status !== '종료' ? `<button class="btn-complete" data-task-id="${task.id}">✅ 완료</button>` : ''}
+                    <button class="btn-save" data-task-id="${task.id}">💾 저장</button>
+                    <button class="btn-cancel">❌ 취소</button>
                 </div>
             </div>
         `;
     }
 
     addTaskEventListeners() {
+        console.log('addTaskEventListeners 시작...');
+        
         // 완료 버튼 이벤트 리스너
-        document.querySelectorAll('.btn-complete').forEach(button => {
+        const completeButtons = document.querySelectorAll('.btn-complete');
+        console.log('완료 버튼 개수:', completeButtons.length);
+        completeButtons.forEach(button => {
             button.addEventListener('click', (e) => {
+                console.log('완료 버튼 클릭됨:', e.target.dataset.taskId);
                 const taskId = e.target.dataset.taskId;
                 if (taskId) {
                     this.completeTask(taskId);
@@ -611,8 +651,11 @@ class TaskManager {
         });
 
         // 수정 버튼 이벤트 리스너
-        document.querySelectorAll('.btn-edit').forEach(button => {
+        const editButtons = document.querySelectorAll('.btn-edit');
+        console.log('수정 버튼 개수:', editButtons.length);
+        editButtons.forEach(button => {
             button.addEventListener('click', (e) => {
+                console.log('수정 버튼 클릭됨:', e.target.dataset.taskId);
                 const taskId = e.target.dataset.taskId;
                 if (taskId) {
                     this.editTask(taskId);
@@ -621,8 +664,11 @@ class TaskManager {
         });
 
         // 삭제 버튼 이벤트 리스너
-        document.querySelectorAll('.btn-delete').forEach(button => {
+        const deleteButtons = document.querySelectorAll('.btn-delete');
+        console.log('삭제 버튼 개수:', deleteButtons.length);
+        deleteButtons.forEach(button => {
             button.addEventListener('click', (e) => {
+                console.log('삭제 버튼 클릭됨:', e.target.dataset.taskId);
                 const taskId = e.target.dataset.taskId;
                 if (taskId) {
                     this.deleteTask(taskId);
@@ -631,20 +677,28 @@ class TaskManager {
         });
 
         // 편집 모드에서 저장/취소 버튼 이벤트 리스너
-        document.querySelectorAll('.btn-save').forEach(button => {
+        const saveButtons = document.querySelectorAll('.btn-save');
+        console.log('저장 버튼 개수:', saveButtons.length);
+        saveButtons.forEach(button => {
             button.addEventListener('click', (e) => {
-                const taskId = e.target.closest('.task-item').dataset.taskId;
+                console.log('저장 버튼 클릭됨:', e.target.dataset.taskId);
+                const taskId = e.target.dataset.taskId;
                 if (taskId) {
                     this.saveInlineEdit(taskId);
                 }
             });
         });
 
-        document.querySelectorAll('.btn-cancel').forEach(button => {
+        const cancelButtons = document.querySelectorAll('.btn-cancel');
+        console.log('취소 버튼 개수:', cancelButtons.length);
+        cancelButtons.forEach(button => {
             button.addEventListener('click', (e) => {
+                console.log('취소 버튼 클릭됨');
                 this.cancelInlineEdit();
             });
         });
+        
+        console.log('addTaskEventListeners 완료');
     }
 
     async loadTasksFromAPI() {
