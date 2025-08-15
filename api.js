@@ -1,8 +1,9 @@
 // API 호출을 담당하는 클래스
 class WorkLogAPI {
     constructor() {
-        // Replit 서버 URL로 변경
-        this.apiURL = 'https://6b16b16f-b3d0-49e6-85ec-9b3f48a5e2d0-00-iaqg683r9svn.picard.replit.dev/api';
+        // Replit API URL 설정
+        this.baseURL = 'https://6b16b16f-b3d0-49e6-85ec-9b3f48a5e2d0-00-iaqg683r9svn.picard.replit.dev';
+        this.apiURL = `${this.baseURL}/api`;
     }
 
     // 모든 작업 로그 조회
