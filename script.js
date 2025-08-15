@@ -139,26 +139,36 @@ class TaskManager {
     }
 
     async handleFormSubmit() {
+        console.log('handleFormSubmit 호출됨, editingTaskId:', this.editingTaskId);
         const formData = new FormData(document.getElementById('taskForm'));
         const taskData = {
             id: this.editingTaskId || Date.now().toString(),
             projectContent: formData.get('projectContent'),
             status: formData.get('status'),
             startDate: formData.get('startDate'),
-            endDate: null, // 새 업무 등록 시에는 종료날짜 없음
+            endDate: formData.get('endDate') || null,
             memo: formData.get('memo'),
             createdAt: this.editingTaskId ? this.getTaskById(this.editingTaskId).createdAt : new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
 
-        if (this.editingTaskId) {
-            await this.updateTask(taskData);
-        } else {
-            await this.addTask(taskData);
-        }
+        console.log('폼 데이터:', taskData);
 
-        this.resetForm();
-        this.renderTasks();
+        try {
+            if (this.editingTaskId) {
+                await this.updateTask(taskData);
+                // 편집 모드에서는 화면 업데이트를 updateTask에서 처리하지 않으므로 여기서 처리
+                this.renderTasks();
+            } else {
+                await this.addTask(taskData);
+                // 새 업무 추가는 addTask에서 renderTasks를 호출하므로 여기서는 불필요
+            }
+
+            this.resetForm();
+        } catch (error) {
+            console.error('폼 제출 실패:', error);
+            // 에러가 발생해도 폼은 초기화하지 않음
+        }
     }
 
     // 완료 처리 함수 추가
@@ -175,10 +185,26 @@ class TaskManager {
             };
             
             console.log('업데이트된 업무:', updatedTask);
-            await this.updateTask(updatedTask);
-            this.editingTaskId = null; // 편집 모드 해제
-            this.renderTasks(); // 화면 업데이트 추가
-            this.showNotification('업무가 완료 처리되었습니다!', 'success');
+            
+            try {
+                // API 호출
+                await this.updateTask(updatedTask);
+                
+                // 로컬 데이터 즉시 업데이트
+                const index = this.tasks.findIndex(t => t.id === taskId);
+                if (index !== -1) {
+                    this.tasks[index] = updatedTask;
+                }
+                
+                this.editingTaskId = null; // 편집 모드 해제
+                this.renderTasks(); // 화면 업데이트
+                this.showNotification('업무가 완료 처리되었습니다!', 'success');
+                
+                console.log('완료 처리 성공');
+            } catch (error) {
+                console.error('완료 처리 실패:', error);
+                this.showNotification('업무 완료 처리에 실패했습니다.', 'error');
+            }
         } else {
             console.error('완료할 업무를 찾을 수 없습니다:', taskId);
         }
@@ -186,6 +212,7 @@ class TaskManager {
 
     async addTask(taskData) {
         try {
+            console.log('addTask 호출됨:', taskData);
             const apiData = workLogAPI.formatForAPI(taskData);
             const result = await workLogAPI.createWorkLog(apiData);
             
@@ -193,6 +220,7 @@ class TaskManager {
             taskData.id = result.id;
             this.tasks.push(taskData);
             
+            console.log('새 업무 추가됨:', taskData);
             this.renderTasks();
             this.showNotification('업무가 성공적으로 등록되었습니다!', 'success');
         } catch (error) {
@@ -203,18 +231,25 @@ class TaskManager {
 
     async updateTask(updatedTask) {
         try {
+            console.log('updateTask 호출됨:', updatedTask);
             const apiData = workLogAPI.formatForAPI(updatedTask);
             await workLogAPI.updateWorkLog(updatedTask.id, apiData);
             
+            // 로컬 데이터 업데이트
             const index = this.tasks.findIndex(task => task.id === updatedTask.id);
             if (index !== -1) {
                 this.tasks[index] = updatedTask;
-                this.renderTasks();
-                this.showNotification('업무가 성공적으로 수정되었습니다!', 'success');
+                console.log('로컬 데이터 업데이트 완료');
+            } else {
+                console.warn('업데이트할 업무를 로컬에서 찾을 수 없습니다:', updatedTask.id);
             }
+            
+            // 화면 업데이트는 호출자가 처리
+            this.showNotification('업무가 성공적으로 수정되었습니다!', 'success');
         } catch (error) {
             console.error('업무 수정 실패:', error);
             this.showNotification('업무 수정에 실패했습니다.', 'error');
+            throw error; // 에러를 다시 던져서 호출자가 처리할 수 있도록
         }
     }
 
@@ -260,11 +295,24 @@ class TaskManager {
             
             // 폼 필드 업데이트
             const form = document.getElementById('taskForm');
+            if (!form) {
+                console.error('taskForm을 찾을 수 없습니다.');
+                return;
+            }
+            
             const projectContentInput = form.querySelector('[name="projectContent"]');
             const statusInput = form.querySelector('[name="status"]');
             const startDateInput = form.querySelector('[name="startDate"]');
             const endDateInput = form.querySelector('[name="endDate"]');
             const memoInput = form.querySelector('[name="memo"]');
+            
+            console.log('폼 요소들:', {
+                projectContentInput: !!projectContentInput,
+                statusInput: !!statusInput,
+                startDateInput: !!startDateInput,
+                endDateInput: !!endDateInput,
+                memoInput: !!memoInput
+            });
             
             if (projectContentInput) projectContentInput.value = task.projectContent;
             if (statusInput) statusInput.value = task.status;
