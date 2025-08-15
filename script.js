@@ -8,21 +8,35 @@ class TaskManager {
         this.editingTaskId = null;
         this.currentFilter = null; // 현재 필터 상태 추가
         
-        this.init();
+        console.log('TaskManager 생성자 호출됨');
+        // 생성자에서 직접 init 호출하지 않고 DOMContentLoaded 이후에 호출
     }
 
     async init() {
         console.log('=== TaskManager 초기화 시작 ===');
-        this.setupEventListeners();
-        this.setDefaultDates();
-        console.log('API에서 업무 로드 시작...');
-        await this.loadTasksFromAPI();
-        console.log('업무 로드 완료, 화면 렌더링 시작...');
-        console.log('렌더링 전 tasks 상태:', this.tasks);
-        this.renderTasks();
-        this.updatePeriodDisplay();
-        console.log('=== TaskManager 초기화 완료 ===');
-        console.log('최종 tasks 상태:', this.tasks);
+        console.log('this 객체:', this);
+        console.log('workLogAPI 객체:', workLogAPI);
+        
+        try {
+            this.setupEventListeners();
+            console.log('이벤트 리스너 설정 완료');
+            
+            this.setDefaultDates();
+            console.log('기본 날짜 설정 완료');
+            
+            console.log('API에서 업무 로드 시작...');
+            await this.loadTasksFromAPI();
+            console.log('업무 로드 완료, 화면 렌더링 시작...');
+            console.log('렌더링 전 tasks 상태:', this.tasks);
+            
+            this.renderTasks();
+            this.updatePeriodDisplay();
+            
+            console.log('=== TaskManager 초기화 완료 ===');
+            console.log('최종 tasks 상태:', this.tasks);
+        } catch (error) {
+            console.error('TaskManager 초기화 중 오류 발생:', error);
+        }
     }
 
     setupEventListeners() {
@@ -1100,4 +1114,5 @@ document.head.appendChild(style);
 let taskManager;
 document.addEventListener('DOMContentLoaded', () => {
     taskManager = new TaskManager();
+    taskManager.init(); // DOMContentLoaded 시 초기화
 });
