@@ -5,8 +5,21 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// CORS 설정
+app.use(cors({
+    origin: [
+        'https://myid9734-ks.github.io',
+        'http://localhost:3000',
+        'http://localhost:5000',
+        'https://*.replit.dev',
+        'https://*.replit.app'
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 // 미들웨어
-app.use(cors());
 app.use(express.json());
 
 // MySQL 연결 설정
