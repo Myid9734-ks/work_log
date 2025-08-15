@@ -227,6 +227,11 @@ class TaskManager {
                 // 통계도 업데이트
                 this.updateStats();
                 
+                // 삭제 완료 후 화면 강제 새로고침
+                setTimeout(() => {
+                    location.reload();
+                }, 1000); // 1초 후 새로고침
+                
             } catch (error) {
                 console.error('업무 삭제 실패:', error);
                 this.showNotification('업무 삭제에 실패했습니다.', 'error');
