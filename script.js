@@ -227,14 +227,17 @@ class TaskManager {
                 // 통계도 업데이트
                 this.updateStats();
                 
-                // 삭제 완료 후 화면 강제 새로고침
-                setTimeout(() => {
-                    location.reload();
-                }, 1000); // 1초 후 새로고침
+                // 삭제 완료 후 화면 강제 새로고침 (즉시 실행)
+                console.log('삭제 완료, 화면 새로고침 시작...');
+                location.reload();
                 
             } catch (error) {
                 console.error('업무 삭제 실패:', error);
                 this.showNotification('업무 삭제에 실패했습니다.', 'error');
+                
+                // 실패 시 원래 데이터 복원
+                await this.loadTasksFromAPI();
+                this.renderTasks();
             }
         }
     }
