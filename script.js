@@ -6,7 +6,7 @@ class TaskManager {
         this.currentView = 'daily';
         this.currentDate = new Date();
         this.editingTaskId = null;
-        this.currentFilter = null; // 현재 필터 상태 추가
+        this.currentFilter = '진행중'; // 기본 필터를 '진행중'으로 설정
         
         console.log('TaskManager 생성자 호출됨');
         // 생성자에서 직접 init 호출하지 않고 DOMContentLoaded 이후에 호출
@@ -31,6 +31,9 @@ class TaskManager {
             
             this.renderTasks();
             this.updatePeriodDisplay();
+            
+            // 초기 필터 스타일 적용
+            this.updateStatsStyles();
             
             console.log('=== TaskManager 초기화 완료 ===');
             console.log('최종 tasks 상태:', this.tasks);
@@ -134,11 +137,25 @@ class TaskManager {
         }
         
         // 업무 목록 제목에 필터 상태 표시
-        const taskListTitle = document.querySelector('.task-list h2');
-        if (this.currentFilter && this.currentFilter !== 'all') {
-            taskListTitle.classList.add('filtered');
-        } else {
-            taskListTitle.classList.remove('filtered');
+        this.updateTaskListTitle();
+    }
+
+    updateTaskListTitle() {
+        // 업무 목록 섹션의 제목을 찾기
+        const taskSection = document.querySelector('section:nth-child(2) h2');
+        if (taskSection) {
+            // 필터가 적용된 경우 제목에 표시
+            if (this.currentFilter && this.currentFilter !== 'all') {
+                const filterNames = {
+                    'all': '모든 업무',
+                    '예정': '예정 업무',
+                    '진행중': '진행중 업무',
+                    '종료': '완료된 업무'
+                };
+                taskSection.innerHTML = `📊 조회 옵션 & 업무 목록 <span class="filter-indicator">(${filterNames[this.currentFilter]}만 표시)</span>`;
+            } else {
+                taskSection.innerHTML = '📊 조회 옵션 & 업무 목록';
+            }
         }
     }
 
@@ -452,6 +469,7 @@ class TaskManager {
         
         this.renderTasks();
         this.updatePeriodDisplay();
+        this.updateStats(); // 뷰 변경 시 통계도 업데이트
     }
 
     navigatePeriod(direction) {
@@ -469,6 +487,7 @@ class TaskManager {
         
         this.renderTasks();
         this.updatePeriodDisplay();
+        this.updateStats(); // 기간 변경 시 통계도 업데이트
     }
 
     updatePeriodDisplay() {
@@ -573,6 +592,9 @@ class TaskManager {
         // 통계 업데이트
         this.updateStats();
         
+        // 업무 목록 제목 업데이트
+        this.updateTaskListTitle();
+        
         if (filteredTasks.length === 0) {
             console.log('표시할 업무가 없습니다.');
             container.innerHTML = `
@@ -633,6 +655,40 @@ class TaskManager {
         
         // 강제 리플로우
         if (totalElement) totalElement.offsetHeight;
+        
+        // 통계 카드에 툴팁 추가 (기간별 정보 표시)
+        this.updateStatsTooltips();
+    }
+
+    updateStatsTooltips() {
+        // 현재 기간 정보 가져오기
+        let periodInfo = '';
+        switch (this.currentView) {
+            case 'daily':
+                periodInfo = this.formatDateForDisplay(this.currentDate);
+                break;
+            case 'weekly':
+                const weekStart = this.getWeekStart(this.currentDate);
+                const weekEnd = this.getWeekEnd(this.currentDate);
+                periodInfo = `${this.formatDateForDisplay(weekStart)} ~ ${this.formatDateForDisplay(weekEnd)}`;
+                break;
+            case 'monthly':
+                periodInfo = `${this.currentDate.getFullYear()}년 ${this.currentDate.getMonth() + 1}월`;
+                break;
+        }
+        
+        // 통계 카드에 툴팁 추가
+        const statItems = document.querySelectorAll('.stat-item');
+        if (statItems.length >= 4) {
+            // 총 업무 카드
+            statItems[0].setAttribute('title', `현재 기간 (${periodInfo})의 총 업무 수`);
+            // 예정 카드
+            statItems[1].setAttribute('title', `현재 기간 (${periodInfo})의 예정 업무 수`);
+            // 진행중 카드
+            statItems[2].setAttribute('title', `현재 기간 (${periodInfo})의 진행중 업무 수`);
+            // 완료 카드
+            statItems[3].setAttribute('title', `현재 기간 (${periodInfo})의 완료된 업무 수`);
+        }
     }
 
     // 현재 선택된 기간에 해당하는 업무만 반환 (필터 적용 전)
@@ -1011,6 +1067,7 @@ class TaskManager {
         this.currentDate = newDate;
         this.renderTasks();
         this.updatePeriodDisplay();
+        this.updateStats(); // 날짜 변경 시 통계도 업데이트
     }
 }
 
