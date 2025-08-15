@@ -215,12 +215,12 @@ class TaskManager {
     async deleteTask(taskId) {
         if (confirm('정말로 이 업무를 삭제하시겠습니까?')) {
             try {
-                // 먼저 로컬에서 제거하여 즉시 화면 업데이트
+                // API 호출 먼저 시도
+                await workLogAPI.deleteWorkLog(taskId);
+                
+                // API 성공 시 로컬에서 제거
                 this.tasks = this.tasks.filter(task => task.id !== taskId);
                 this.renderTasks();
-                
-                // API 호출
-                await workLogAPI.deleteWorkLog(taskId);
                 
                 this.showNotification('업무가 삭제되었습니다.', 'info');
                 
@@ -235,10 +235,6 @@ class TaskManager {
             } catch (error) {
                 console.error('업무 삭제 실패:', error);
                 this.showNotification('업무 삭제에 실패했습니다.', 'error');
-                
-                // 실패 시 원래 데이터 복원
-                await this.loadTasksFromAPI();
-                this.renderTasks();
             }
         }
     }
