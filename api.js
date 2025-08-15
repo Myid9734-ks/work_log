@@ -1,9 +1,8 @@
 // API 호출을 담당하는 클래스
 class WorkLogAPI {
     constructor() {
-        // Netlify 환경변수에서 API URL 가져오기
-        this.baseURL = window.location.origin;
-        this.apiURL = `${this.baseURL}/.netlify/functions/worklogs`;
+        // Replit 서버 URL로 변경
+        this.apiURL = 'https://6b16b16f-b3d0-49e6-85ec-9b3f48a5e2d0-00-iaqg683r9svn.picard.replit.dev/api';
     }
 
     // 모든 작업 로그 조회
