@@ -179,9 +179,19 @@ class TaskManager {
                 await this.updateTask(taskData);
                 // 편집 모드에서는 화면 업데이트를 updateTask에서 처리하지 않으므로 여기서 처리
                 this.renderTasks();
+                this.showNotification('업무가 성공적으로 수정되었습니다!', 'success');
+                // 수정 완료 후 화면 새로고침
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
             } else {
                 await this.addTask(taskData);
                 // 새 업무 추가는 addTask에서 renderTasks를 호출하므로 여기서는 불필요
+                this.showNotification('업무가 성공적으로 등록되었습니다!', 'success');
+                // 등록 완료 후 화면 새로고침
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
             }
 
             this.resetForm();
@@ -221,6 +231,11 @@ class TaskManager {
                 this.showNotification('업무가 완료 처리되었습니다!', 'success');
                 
                 console.log('완료 처리 성공');
+                
+                // 완료 처리 완료 후 화면 새로고침
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
             } catch (error) {
                 console.error('완료 처리 실패:', error);
                 this.showNotification('업무 완료 처리에 실패했습니다.', 'error');
@@ -425,6 +440,11 @@ class TaskManager {
         await this.updateTask(updatedTask);
         this.editingTaskId = null;
         this.renderTasks();
+        
+        // 저장 완료 후 화면 새로고침
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
     }
 
     cancelInlineEdit() {
