@@ -709,6 +709,22 @@ textarea {
     border: 1px solid var(--border-light);
 }
 
+.stats-description {
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.stats-description p {
+    color: var(--primary-color);
+    font-weight: 500;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
 .list-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -788,6 +804,7 @@ textarea {
 .stat-item {
     cursor: pointer;
     position: relative;
+    user-select: none;
 }
 
 .stat-item:hover {
@@ -796,12 +813,64 @@ textarea {
     border-color: var(--primary-color);
 }
 
+/* 통계 카드 클릭 효과 */
+.stat-item:active {
+    transform: translateY(0);
+    transition: transform 0.1s ease;
+}
+
+/* 통계 카드 툴팁 스타일 */
+.stat-item[title]:hover::before {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text-primary);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-bottom: 8px;
+    box-shadow: var(--shadow-lg);
+}
+
+.stat-item[title]:hover::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--text-primary);
+    margin-bottom: 3px;
+}
+
 /* 필터 적용 중일 때 업무 목록 제목에 표시 */
-.task-list h2.filtered::after {
-    content: ' (필터링됨)';
+.filter-indicator {
     font-size: 0.8em;
     color: var(--primary-color);
     font-weight: 500;
+    background: rgba(99, 102, 241, 0.1);
+    padding: 4px 8px;
+    border-radius: 6px;
+    margin-left: 10px;
+    display: inline-block;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* 푸터 */
