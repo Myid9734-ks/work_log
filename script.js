@@ -211,7 +211,7 @@ class TaskManager {
                 await this.updateTask(updatedTask);
                 
                 // 로컬 데이터 즉시 업데이트
-                const index = this.tasks.findIndex(t => t.id === taskId);
+                const index = this.tasks.findIndex(t => String(t.id) === String(taskId));
                 if (index !== -1) {
                     this.tasks[index] = updatedTask;
                 }
@@ -255,13 +255,15 @@ class TaskManager {
             const apiData = workLogAPI.formatForAPI(updatedTask);
             await workLogAPI.updateWorkLog(updatedTask.id, apiData);
             
-            // 로컬 데이터 업데이트
-            const index = this.tasks.findIndex(task => task.id === updatedTask.id);
+            // 로컬 데이터 업데이트 - ID 타입을 문자열로 통일하여 비교
+            const index = this.tasks.findIndex(task => String(task.id) === String(updatedTask.id));
             if (index !== -1) {
                 this.tasks[index] = updatedTask;
                 console.log('로컬 데이터 업데이트 완료');
             } else {
                 console.warn('업데이트할 업무를 로컬에서 찾을 수 없습니다:', updatedTask.id);
+                console.log('현재 tasks 배열:', this.tasks);
+                console.log('찾으려는 ID:', updatedTask.id, '타입:', typeof updatedTask.id);
             }
             
             // 화면 업데이트는 호출자가 처리
@@ -280,7 +282,7 @@ class TaskManager {
                 await workLogAPI.deleteWorkLog(taskId);
                 
                 // API 성공 시 로컬에서 제거
-                this.tasks = this.tasks.filter(task => task.id !== taskId);
+                this.tasks = this.tasks.filter(task => String(task.id) !== String(taskId));
                 this.renderTasks();
                 
                 this.showNotification('업무가 삭제되었습니다.', 'info');
