@@ -12,11 +12,15 @@ class TaskManager {
     }
 
     async init() {
+        console.log('TaskManager 초기화 시작...');
         this.setupEventListeners();
         this.setDefaultDates();
+        console.log('API에서 업무 로드 시작...');
         await this.loadTasksFromAPI();
+        console.log('업무 로드 완료, 화면 렌더링 시작...');
         this.renderTasks();
         this.updatePeriodDisplay();
+        console.log('TaskManager 초기화 완료');
     }
 
     setupEventListeners() {
@@ -284,7 +288,22 @@ class TaskManager {
     }
 
     getTaskById(taskId) {
-        return this.tasks.find(task => task.id === taskId);
+        console.log('getTaskById 호출됨:', taskId, '타입:', typeof taskId);
+        console.log('현재 tasks 배열:', this.tasks);
+        console.log('tasks 배열 길이:', this.tasks.length);
+        
+        // ID 타입을 문자열로 통일
+        const stringTaskId = String(taskId);
+        console.log('문자열로 변환된 taskId:', stringTaskId);
+        
+        const task = this.tasks.find(task => {
+            const taskIdStr = String(task.id);
+            console.log('비교 중:', taskIdStr, '===', stringTaskId, '결과:', taskIdStr === stringTaskId);
+            return taskIdStr === stringTaskId;
+        });
+        
+        console.log('찾은 업무:', task);
+        return task;
     }
 
     editTask(taskId) {
@@ -525,6 +544,8 @@ class TaskManager {
         const filteredTasks = this.getFilteredTasks();
         
         console.log('renderTasks 호출됨, 필터된 업무 수:', filteredTasks.length);
+        console.log('전체 tasks 배열:', this.tasks);
+        console.log('editingTaskId:', this.editingTaskId);
         
         // 통계 업데이트
         this.updateStats();
@@ -541,7 +562,8 @@ class TaskManager {
 
         // 기존 내용을 완전히 지우고 새로 생성
         container.innerHTML = '';
-        filteredTasks.forEach(task => {
+        filteredTasks.forEach((task, index) => {
+            console.log(`업무 ${index + 1} 렌더링:`, task);
             const taskElement = document.createElement('div');
             taskElement.innerHTML = this.createTaskHTML(task);
             container.appendChild(taskElement.firstElementChild);
@@ -610,14 +632,19 @@ class TaskManager {
     }
 
     createTaskHTML(task) {
+        console.log('createTaskHTML 호출됨, task:', task);
+        console.log('task.id:', task.id, '타입:', typeof task.id);
+        
         const startDate = new Date(task.startDate);
         const endDate = task.endDate ? new Date(task.endDate) : null;
         
         // 편집 모드인지 확인
         if (this.editingTaskId === task.id) {
+            console.log('편집 모드로 HTML 생성');
             return this.createEditTaskHTML(task);
         }
         
+        console.log('일반 모드로 HTML 생성');
         return `
             <div class="task-item" data-task-id="${task.id}">
                 <div class="task-header">
@@ -751,8 +778,22 @@ class TaskManager {
 
     async loadTasksFromAPI() {
         try {
+            console.log('loadTasksFromAPI 시작...');
             const workLogs = await workLogAPI.getAllWorkLogs();
-            this.tasks = workLogs.map(workLog => workLogAPI.formatFromAPI(workLog));
+            console.log('API에서 받은 원본 데이터:', workLogs);
+            
+            this.tasks = workLogs.map(workLog => {
+                const formattedTask = workLogAPI.formatFromAPI(workLog);
+                console.log('포맷된 업무:', formattedTask);
+                return formattedTask;
+            });
+            
+            console.log('최종 tasks 배열:', this.tasks);
+            console.log('tasks 배열 길이:', this.tasks.length);
+            
+            if (this.tasks.length > 0) {
+                console.log('첫 번째 업무 ID:', this.tasks[0].id, '타입:', typeof this.tasks[0].id);
+            }
         } catch (error) {
             console.error('업무 로드 실패:', error);
             this.showNotification('업무 목록을 불러오는데 실패했습니다.', 'error');
