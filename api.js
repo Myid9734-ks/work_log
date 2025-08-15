@@ -4,6 +4,7 @@ class WorkLogAPI {
         // Replit API URL 설정
         this.baseURL = 'https://6b16b16f-b3d0-49e6-85ec-9b3f48a5e2d0-00-iaqg683r9svn.picard.replit.dev';
         this.apiURL = `${this.baseURL}/api`;
+        console.log('🌐 API URL 설정:', this.apiURL);
     }
 
     // 모든 작업 로그 조회

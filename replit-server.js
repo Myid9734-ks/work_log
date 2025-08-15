@@ -5,19 +5,32 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS 설정
+// CORS 설정 강화
 app.use(cors({
-    origin: [
-        'https://myid9734-ks.github.io',
-        'http://localhost:3000',
-        'http://localhost:5000',
-        'https://*.replit.dev',
-        'https://*.replit.app'
-    ],
+    origin: true, // 모든 도메인 허용
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
 }));
+
+// CORS preflight 요청 처리
+app.options('*', cors());
+
+// 추가 CORS 헤더 설정
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    
+    if (req.method === 'OPTIONS') {
+        res.sendStatus(200);
+    } else {
+        next();
+    }
+});
 
 // 미들웨어
 app.use(express.json());
