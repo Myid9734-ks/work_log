@@ -258,6 +258,11 @@ class TaskManager {
             console.log('새 업무 추가됨:', taskData);
             this.renderTasks();
             this.showNotification('업무가 성공적으로 등록되었습니다!', 'success');
+            
+            // 등록 완료 후 화면 새로고침
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
         } catch (error) {
             console.error('업무 등록 실패:', error);
             this.showNotification('업무 등록에 실패했습니다.', 'error');
@@ -409,54 +414,14 @@ class TaskManager {
         }
     }
 
-    async saveInlineEdit(taskId) {
-        const taskElement = document.querySelector(`[data-task-id="${taskId}"]`);
-        if (!taskElement) {
-            console.error('업무 요소를 찾을 수 없습니다:', taskId);
-            return;
-        }
-        
-        const projectContent = taskElement.querySelector('.edit-projectContent')?.value;
-        const status = taskElement.querySelector('.edit-status')?.value;
-        const startDate = taskElement.querySelector('.edit-startDate')?.value;
-        const endDate = taskElement.querySelector('.edit-endDate')?.value;
-        const memo = taskElement.querySelector('.edit-memo')?.value;
-
-        if (!projectContent || !status || !startDate) {
-            this.showNotification('필수 항목을 모두 입력해주세요.', 'error');
-            return;
-        }
-
-        const updatedTask = {
-            ...this.getTaskById(taskId),
-            projectContent,
-            status,
-            startDate,
-            endDate: status === '종료' ? (endDate || this.formatDateForInput(new Date())) : endDate,
-            memo,
-            updatedAt: new Date().toISOString()
-        };
-
-        await this.updateTask(updatedTask);
-        this.editingTaskId = null;
-        this.renderTasks();
-        
-        // 저장 완료 후 화면 새로고침
-        setTimeout(() => {
-            location.reload();
-        }, 1000);
-    }
+    // saveInlineEdit 함수 제거 - 인라인 편집 모드 사용하지 않음
 
     cancelInlineEdit() {
         console.log('cancelInlineEdit 호출됨');
         this.editingTaskId = null;
-        this.renderTasks();
         
-        // 폼을 보이게 하고 업무 목록을 표시
-        const form = document.getElementById('taskForm');
-        const taskContainer = document.getElementById('taskContainer');
-        if (form) form.style.display = 'block';
-        if (taskContainer) taskContainer.style.display = 'block';
+        // 폼을 초기화하고 업무 목록을 표시
+        this.resetForm();
         
         console.log('편집 모드 취소 완료');
     }
@@ -704,12 +669,7 @@ class TaskManager {
         const startDate = new Date(task.startDate);
         const endDate = task.endDate ? new Date(task.endDate) : null;
         
-        // 편집 모드인지 확인
-        if (this.editingTaskId === task.id) {
-            console.log('편집 모드로 HTML 생성');
-            return this.createEditTaskHTML(task);
-        }
-        
+        // 항상 일반 모드로 HTML 생성 (인라인 편집 모드 제거)
         console.log('일반 모드로 HTML 생성');
         return `
             <div class="task-item" data-task-id="${task.id}">
@@ -729,47 +689,6 @@ class TaskManager {
                     ${task.status !== '종료' ? `<button class="btn-complete" data-task-id="${task.id}">✅ 완료</button>` : ''}
                     <button class="btn-edit" data-task-id="${task.id}">✏️ 수정</button>
                     <button class="btn-delete" data-task-id="${task.id}">🗑️ 삭제</button>
-                </div>
-            </div>
-        `;
-    }
-
-    createEditTaskHTML(task) {
-        return `
-            <div class="task-item editing" data-task-id="${task.id}">
-                <div class="task-header">
-                    <div class="task-title">
-                        <input type="text" class="edit-projectContent" value="${task.projectContent}" placeholder="프로젝트 내용">
-                    </div>
-                    <div class="task-status">
-                        <select class="edit-status">
-                            <option value="예정" ${task.status === '예정' ? 'selected' : ''}>📅 예정</option>
-                            <option value="진행중" ${task.status === '진행중' ? 'selected' : ''}>🔄 진행중</option>
-                            <option value="종료" ${task.status === '종료' ? 'selected' : ''}>✅ 종료</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="task-dates">
-                    <span>
-                        📅 시작: 
-                        <input type="date" class="edit-startDate" value="${task.startDate}">
-                    </span>
-                    <span>
-                        🏁 완료: 
-                        <input type="date" class="edit-endDate" value="${task.endDate || ''}" ${task.status === '종료' ? '' : 'disabled'}>
-                    </span>
-                </div>
-                
-                <div class="task-memo">
-                    💬 
-                    <textarea class="edit-memo" rows="2" placeholder="메모를 입력하세요">${task.memo || ''}</textarea>
-                </div>
-                
-                <div class="task-actions">
-                    ${task.status !== '종료' ? `<button class="btn-complete" data-task-id="${task.id}">✅ 완료</button>` : ''}
-                    <button class="btn-save" data-task-id="${task.id}">💾 저장</button>
-                    <button class="btn-cancel">❌ 취소</button>
                 </div>
             </div>
         `;
@@ -818,18 +737,8 @@ class TaskManager {
         });
 
         // 편집 모드에서 저장/취소 버튼 이벤트 리스너
-        const saveButtons = document.querySelectorAll('.btn-save');
-        console.log('저장 버튼 개수:', saveButtons.length);
-        saveButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
-                console.log('저장 버튼 클릭됨:', e.target.dataset.taskId);
-                const taskId = e.target.dataset.taskId;
-                if (taskId) {
-                    this.saveInlineEdit(taskId);
-                }
-            });
-        });
-
+        // 인라인 편집 모드는 사용하지 않으므로 제거
+        
         const cancelButtons = document.querySelectorAll('.btn-cancel');
         console.log('취소 버튼 개수:', cancelButtons.length);
         cancelButtons.forEach(button => {
